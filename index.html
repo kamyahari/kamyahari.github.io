@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>kamyahari ~$</title>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&family=VT323&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #2b0d27;
+      --bg2:       #320f2e;
+      --border:    #4a1f44;
+      --border-hi: #7a3a6e;
+      --text:      #d0d0d0;
+      --text-dim:  #8a8a8a;
+      --text-mute: #5a5a5a;
+      --green:     #4dff57;
+      --green-dim: #28b830;
+      --amber:     #e8a838;
+      --cyan:      #67e8f9;
+      --white:     #e0e0e0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Ubuntu Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
+      );
+      pointer-events: none; z-index: 9999;
+    }
+
+    @keyframes flicker { 0%,100%{opacity:1} 95%{opacity:0.97} 96%{opacity:1} }
+    body { animation: flicker 12s infinite; }
+
+    /* BOOT */
+    #boot {
+      position: fixed; inset: 0;
+      background: #1a0818; z-index: 1000;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-start;
+      padding: 8vw;
+      font-size: clamp(11px, 1.5vw, 14px);
+    }
+    #boot.hide { animation: fadeOut 0.7s forwards; }
+    @keyframes fadeOut { to { opacity: 0; pointer-events: none; } }
+    .boot-line { opacity: 0; white-space: pre; line-height: 1.75; }
+    .boot-line.show { opacity: 1; }
+    .boot-line.ok   { color: var(--green); }
+    .boot-line.warn { color: var(--amber); }
+    .boot-line.info { color: #5a3a5a; }
+    .boot-line.hi   { color: var(--green); font-family: 'VT323', monospace; font-size: 1.9em; letter-spacing: 1px; }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0;
+      background: rgba(43,13,39,0.97);
+      border-bottom: 1px solid var(--border);
+      padding: 0.55rem 2rem;
+      display: flex; gap: 1.8rem;
+      z-index: 100; backdrop-filter: blur(8px);
+      font-size: 0.78rem;
+    }
+    nav a { color: var(--text-mute); text-decoration: none; transition: color 0.2s; }
+    nav a:hover { color: var(--green); }
+    nav a::before { content: './'; color: #3a1a36; }
+
+    /* MAIN */
+    #main {
+      max-width: 860px; margin: 0 auto;
+      padding: 2.5rem 2rem 6rem;
+      opacity: 0; transition: opacity 0.8s;
+    }
+    #main.visible { opacity: 1; }
+
+    /* HEADER */
+    .prompt-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem; margin-bottom: 3rem;
+    }
+    .big-name {
+      font-family: 'VT323', monospace;
+      font-size: clamp(2.6rem, 7.5vw, 5rem);
+      color: var(--green);
+      text-shadow: 0 0 28px rgba(77,255,87,0.25);
+      line-height: 1; letter-spacing: 2px;
+    }
+    .tagline { margin-top: 0.5rem; font-size: 0.88rem; }
+    .tagline .p   { color: var(--green); }
+    .tagline .val { color: var(--white); }
+    .cursor {
+      display: inline-block; width: 0.55em; height: 1em;
+      background: var(--green); vertical-align: text-bottom;
+      animation: blink 1s step-end infinite; opacity: 0.8;
+    }
+    @keyframes blink { 50%{opacity:0} }
+
+    /* SECTION CMD */
+    .section { margin-bottom: 3.2rem; }
+    .sec-cmd { font-size: 0.82rem; margin-bottom: 1.2rem; }
+    .sec-cmd .p { color: var(--green); }
+    .sec-cmd .c { color: var(--white); }
+
+    /* TERM BLOCK */
+    .term-block {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--border-hi);
+      padding: 1.2rem 1.5rem;
+    }
+    .term-block:hover { border-left-color: var(--green); transition: border-color 0.3s; }
+
+    /* ABOUT */
+    .about-text { line-height: 2; font-size: 0.88rem; }
+    .about-text .hl  { color: var(--green); }
+    .about-text .dim { color: var(--text-dim); }
+
+    /* SKILLS */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .skill-label { color: var(--amber); font-size: 0.74rem; margin-bottom: 0.4rem; }
+    .skill-tags  { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .tag {
+      background: transparent; color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 2px 8px; font-size: 0.72rem;
+      transition: all 0.2s;
+    }
+    .tag:hover { color: var(--green); border-color: var(--green-dim); }
+
+    /* EXPERIENCE */
+    .exp-list { display: flex; flex-direction: column; gap: 1rem; }
+    .exp-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--border-hi);
+      padding: 1rem 1.3rem;
+      transition: border-color 0.25s;
+    }
+    .exp-card:hover { border-left-color: var(--green); }
+    .exp-top {
+      display: flex; justify-content: space-between; align-items: baseline;
+      flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.25rem;
+    }
+    .exp-role  { color: var(--green); font-size: 0.9rem; }
+    .exp-date  { color: var(--text-mute); font-size: 0.74rem; }
+    .exp-org   { color: var(--amber); font-size: 0.76rem; margin-bottom: 0.6rem; }
+    .exp-bullets { list-style: none; }
+    .exp-bullets li {
+      color: var(--text); font-size: 0.82rem; line-height: 1.65;
+      padding-left: 1.2rem; position: relative;
+    }
+    .exp-bullets li::before { content: '>'; position: absolute; left: 0; color: var(--text-mute); }
+
+    /* PROJECTS */
+    .project-list { display: flex; flex-direction: column; gap: 0.9rem; }
+    .project-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--border-hi);
+      padding: 1rem 1.3rem;
+      transition: border-color 0.25s;
+    }
+    .project-card:hover { border-left-color: var(--green); }
+    .proj-header { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+    .proj-name  { color: var(--green); font-size: 0.9rem; }
+    .proj-stack { color: var(--amber); font-size: 0.72rem; }
+    .proj-desc  { color: var(--text); font-size: 0.82rem; line-height: 1.65; }
+    .proj-badge {
+      display: inline-block; margin-top: 0.5rem;
+      font-size: 0.69rem; color: var(--cyan);
+      border: 1px solid #1a4a5a; padding: 1px 7px;
+    }
+
+    /* LINKS */
+    .links-row { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+    .link-btn {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-dim); padding: 0.45rem 1rem;
+      font-family: 'Ubuntu Mono', monospace; font-size: 0.8rem;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .link-btn:hover { border-color: var(--green-dim); color: var(--green); }
+
+    /* CONTACT */
+    .contact-text { font-size: 0.88rem; line-height: 1.9; }
+    .contact-text a { color: var(--green); text-decoration: none; }
+    .contact-text a:hover { color: #86ff8e; }
+
+    /* FOOTER */
+    footer {
+      font-size: 0.82rem;
+      padding: 2rem 0 0;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+
+    @media(max-width:600px){
+      #main { padding: 1rem 1rem 4rem; }
+      nav { padding: 0.5rem 1rem; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- BOOT -->
+<div id="boot"><div id="boot-lines"></div></div>
+
+<!-- NAV -->
+<nav id="nav" style="display:none">
+  <a href="#about">about</a>
+  <a href="#skills">skills</a>
+  <a href="#experience">experience</a>
+  <a href="#projects">projects</a>
+  <a href="#links">links</a>
+  <a href="#contact">contact</a>
+</nav>
+
+<div id="main">
+
+  <!-- HEADER -->
+  <header class="prompt-header">
+    <div class="big-name">KAMYA HARI</div>
+    <div class="tagline">
+      <span class="p">kamyahari@gatech:~$</span>
+      <span class="val"> MS ECE @ Georgia Tech</span><span class="cursor"></span>
+    </div>
+  </header>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="sec-cmd"><span class="p">kamyahari@gatech:~$</span> <span class="c">cat about.txt</span></div>
+    <div class="term-block">
+      <div class="about-text">
+        MS ECE student at <span class="hl">Georgia Tech</span> (GPA 3.91), graduating May 2026.<br/>
+        I work at the intersection of <span class="hl">hardware and software</span> — from RTL and FPGA design
+        to GPU kernel optimization and LLM-powered research pipelines.<br/><br/>
+        Research interests span <span class="hl">GPU architecture</span>, <span class="hl">FPGA/HLS design</span>,
+        and <span class="hl">neuroscience-driven AI</span> — building systems that are fast, interpretable,
+        and grounded in how the brain processes language.
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="section" id="skills">
+    <div class="sec-cmd"><span class="p">kamyahari@gatech:~$</span> <span class="c">cat skills.json | jq .</span></div>
+    <div class="term-block">
+      <div class="skills-grid">
+        <div>
+          <div class="skill-label">// languages</div>
+          <div class="skill-tags">
+            <span class="tag">Python</span><span class="tag">C++</span><span class="tag">CUDA</span>
+            <span class="tag">Verilog</span><span class="tag">SystemVerilog</span><span class="tag">VHDL</span>
+            <span class="tag">MATLAB</span><span class="tag">Tcl</span>
+          </div>
+        </div>
+        <div>
+          <div class="skill-label">// frameworks</div>
+          <div class="skill-tags">
+            <span class="tag">PyTorch</span><span class="tag">HuggingFace</span><span class="tag">Ollama</span>
+            <span class="tag">OpenMP</span><span class="tag">OpenMPI</span><span class="tag">OpenGL</span>
+            <span class="tag">UVM</span><span class="tag">Keras</span>
+          </div>
+        </div>
+        <div>
+          <div class="skill-label">// tools</div>
+          <div class="skill-tags">
+            <span class="tag">Vivado</span><span class="tag">Vitis HLS</span><span class="tag">NSight</span>
+            <span class="tag">Innovus</span><span class="tag">Virtuoso</span><span class="tag">ModelSim</span>
+            <span class="tag">Git</span>
+          </div>
+        </div>
+        <div>
+          <div class="skill-label">// domains</div>
+          <div class="skill-tags">
+            <span class="tag">GPU Architecture</span><span class="tag">FPGA/HLS</span><span class="tag">VLSI</span>
+            <span class="tag">Computer Architecture</span><span class="tag">LLMs</span><span class="tag">DSP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section class="section" id="experience">
+    <div class="sec-cmd"><span class="p">kamyahari@gatech:~$</span> <span class="c">cat experience.log</span></div>
+    <div class="exp-list">
+
+      <div class="exp-card">
+        <div class="exp-top">
+          <span class="exp-role">Graduate Research Assistant</span>
+          <span class="exp-date">Aug 2024 – Present</span>
+        </div>
+        <div class="exp-org">Language, Intelligence and Thought Lab · Georgia Tech, Atlanta GA</div>
+        <ul class="exp-bullets">
+          <li>Built GPU-accelerated pipelines to automate semantic labeling of narrative stimuli using open-source LLMs.</li>
+          <li>Developing encoding models and analyzing model responses with respect to language-selective brain regions in task-based fMRI data.</li>
+        </ul>
+      </div>
+
+      <div class="exp-card">
+        <div class="exp-top">
+          <span class="exp-role">Research Assistant</span>
+          <span class="exp-date">Aug 2025 – Present</span>
+        </div>
+        <div class="exp-org">SHARC Lab · Georgia Tech, Atlanta GA</div>
+        <ul class="exp-bullets">
+          <li>Contributing to OmniSim, a cycle-accurate simulator for C/RTL co-simulation for HLS.</li>
+          <li>Debugging RTL waveforms for AXI modeling mismatches.</li>
+          <li>Improving Vitis HLS-generated RTL readability using LLM-based variable renaming and comments.</li>
+        </ul>
+      </div>
+
+      <div class="exp-card">
+        <div class="exp-top">
+          <span class="exp-role">Research Assistant</span>
+          <span class="exp-date">Aug 2023 – Jun 2024</span>
+        </div>
+        <div class="exp-org">Speech and Language Technology Lab · SSN College of Engineering, Chennai</div>
+        <ul class="exp-bullets">
+          <li>Classified sentences from EEG signals and converted them to speech using Emotiv Epoc X 14-channel headset data.</li>
+          <li>2D CNNs for feature extraction, Genetic Algorithms for feature selection, Decision Trees for classification — 41.79% accuracy for 64-class sentence-level classification (SoTA).</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="section" id="projects">
+    <div class="sec-cmd"><span class="p">kamyahari@gatech:~$</span> <span class="c">ls -la ./projects/</span></div>
+    <div class="project-list">
+
+      <div class="project-card">
+        <div class="proj-header">
+          <span class="proj-name">> parallel_bitonic_sort</span>
+          <span class="proj-stack">[C++, CUDA, Nsight Compute]</span>
+        </div>
+        <div class="proj-desc">
+          CUDA Bitonic Sort with shared memory, pinned memory, async transfers, and loop unrolling.
+          Profiled with Nsight Compute to tune memory throughput and occupancy —
+          achieved <span style="color:var(--green)">1250M elements/sec</span>,
+          a <span style="color:var(--green)">222× CPU speedup</span>.
+        </div>
+        <span class="proj-badge">⚡ 222× CPU speedup</span>
+      </div>
+
+      <div class="project-card">
+        <div class="proj-header">
+          <span class="proj-name">> neuro_symbolic_fpga</span>
+          <span class="proj-stack">[C++, Vitis HLS]</span>
+        </div>
+        <div class="proj-desc">
+          FPGA kernels for neuro-symbolic AI — circular ResNet layer (neural) and circular convolution (symbolic reasoning).
+          AXI burst transfers, loop unrolling, and dataflow parallelism via HLS.
+          <span style="color:var(--green)">10× speedup</span> on the neural kernel,
+          <span style="color:var(--green)">50× on the symbolic kernel</span>.
+        </div>
+        <span class="proj-badge">⚡ 50× symbolic speedup</span>
+      </div>
+
+      <div class="project-card">
+        <div class="proj-header">
+          <span class="proj-name">> gpu_cache_tensor_sim</span>
+          <span class="proj-stack">[C++, MacSim, NVBit]</span>
+        </div>
+        <div class="proj-desc">
+          GPU compute and tensor core simulation in MacSim — instruction latencies, register dependencies, parallel execution.
+          Extended warp scheduling (Round Robin, GTO, CCWS) to improve cache locality and warp utilization.
+          Analyzed NVBit-generated HMMA/FFMA traces to evaluate performance trade-offs across compute and tensor workloads.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- LINKS -->
+  <section class="section" id="links">
+    <div class="sec-cmd"><span class="p">kamyahari@gatech:~$</span> <span class="c">open ./links/*</span></div>
+    <div class="term-block">
+      <div class="links-row">
+        <a class="link-btn" href="https://github.com/kamyahari" target="_blank">⌥ github</a>
+        <a class="link-btn" href="https://www.linkedin.com/in/kamya-hari" target="_blank">⌘ linkedin</a>
+        <a class="link-btn" href="mailto:khari8@gatech.edu">@ email</a>
+        <a class="link-btn" href="https://scholar.google.com" target="_blank">∇ google scholar</a>
+        <a class="link-btn" href="/Kamya_Hari_Resume.pdf" target="_blank">↓ cv / resume</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section" id="contact">
+    <div class="sec-cmd"><span class="p">kamyahari@gatech:~$</span> <span class="c">cat contact.txt</span></div>
+    <div class="term-block">
+      <div class="contact-text">
+        Feel free to reach out at <a href="mailto:khari8@gatech.edu">khari8@gatech.edu</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="sec-cmd"><span class="p">kamyahari@gatech:~$</span> <span class="c">exit 0</span></div>
+  </footer>
+
+</div>
+
+<script>
+  const bootLines = [
+    { text: 'Ubuntu 22.04.3 LTS -- Georgia Tech ECE Research Node', cls: 'info', delay: 0 },
+    { text: 'Linux gatech-node 5.15.0-91-generic #101-Ubuntu SMP',  cls: 'info', delay: 160 },
+    { text: '',                                                       cls: 'info', delay: 280 },
+    { text: 'Initializing memory subsystem .............. [ OK ]',   cls: 'ok',   delay: 400 },
+    { text: 'Loading CUDA runtime ........................ [ OK ]',   cls: 'ok',   delay: 540 },
+    { text: 'Mounting /home/kamya ........................ [ OK ]',   cls: 'ok',   delay: 670 },
+    { text: 'Spawning GPU kernel scheduler .............. [ OK ]',   cls: 'ok',   delay: 800 },
+    { text: 'Loading HuggingFace models ................. [ OK ]',   cls: 'ok',   delay: 930 },
+    { text: 'Compiling Vitis HLS pipeline ............... [ WARN: 1 latency violation ]', cls: 'warn', delay: 1060 },
+    { text: 'Starting fMRI encoding model ............... [ OK ]',   cls: 'ok',   delay: 1190 },
+    { text: 'Checking warp divergence ................... [ 0 divergent branches ]', cls: 'ok', delay: 1320 },
+    { text: 'Connecting to OmniSim @ SHARC Lab .......... [ OK ]',   cls: 'ok',   delay: 1450 },
+    { text: '',                                                       cls: 'info', delay: 1580 },
+    { text: 'Welcome, Kamya.',                                        cls: 'hi',   delay: 1700 },
+    { text: 'Last login: Thu Mar 05 2026 from 127.0.0.1',            cls: 'info', delay: 1980 },
+  ];
+
+  const container = document.getElementById('boot-lines');
+  bootLines.forEach(function(item) {
+    setTimeout(function() {
+      var el = document.createElement('div');
+      el.className = 'boot-line ' + item.cls + ' show';
+      el.textContent = item.text;
+      container.appendChild(el);
+    }, item.delay);
+  });
+
+  setTimeout(function() {
+    document.getElementById('boot').classList.add('hide');
+    setTimeout(function() {
+      document.getElementById('boot').style.display = 'none';
+      document.getElementById('nav').style.display = 'flex';
+      document.getElementById('main').classList.add('visible');
+    }, 700);
+  }, 2900);
+</script>
+</body>
+</html>
